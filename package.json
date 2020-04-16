@@ -1,0 +1,24 @@
+{
+  "name": "key_value-store",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Erik Henning",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Katzuno/Node-Key-value-store.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Katzuno/Node-Key-value-store/issues"
+  },
+  "homepage": "https://github.com/Katzuno/Node-Key-value-store#readme",
+  "description": "",
+  "dependencies": {
+    "readline": "^1.3.0",
+    "readline-sync": "^1.4.10"
+  }
+}
