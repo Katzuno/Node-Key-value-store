@@ -2,6 +2,9 @@
 
 const readline = require('readline');
 
+/**
+ * Pentru nested transactions am ales sa construiesc o stiva (ultimul venit, primul iesit) pentru muta commit-urile dintr-o tranzactie in alta.
+ */
 class KV_Store {
     constructor() {
         this.dict = {};
