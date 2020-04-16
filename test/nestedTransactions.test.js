@@ -20,4 +20,38 @@ describe('test different inputs example', () => {
         expect(result4).toBe('');
         expect(result5).toBe('Key not found: a');
     });
+
+    test('PDF Example input', ()   => {
+        let result = store.executeCommand('WRITE a v1');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('v1');
+        result = store.executeCommand('START');
+        expect(result).toBe('');
+        result = store.executeCommand('WRITE a v2');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('v2');
+        result = store.executeCommand('START');
+        expect(result).toBe('');
+        result = store.executeCommand('DELETE a');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('Key not found: a');
+        result = store.executeCommand('COMMIT');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('Key not found: a');
+        result = store.executeCommand('WRITE a v3');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('v3');
+        result = store.executeCommand('ABORT');
+        expect(result).toBe('');
+        result = store.executeCommand('READ a');
+        expect(result).toBe('v1');
+        result = store.executeCommand('QUIT');
+        expect(result).toBe('');
+
+    });
 });

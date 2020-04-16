@@ -1,6 +1,7 @@
 // Henning Erik
 
 const readline = require('readline');
+const deepClone = require('lodash.clonedeep');
 
 /**
  * Pentru nested transactions am ales sa construiesc o stiva (ultimul venit, primul iesit) pentru muta commit-urile dintr-o tranzactie in alta.
@@ -40,6 +41,7 @@ class KV_Store {
         } else {
             this.dict[key] = value;
         }
+        console.log(this.transactions);
     }
 
     read(key) {
@@ -71,10 +73,20 @@ class KV_Store {
     }
 
     startTransaction() {
-        let newTransaction = {
-            'running': true,
-            'dictDuringTransaction': this.dict
-        };
+        let newTransaction;
+        if (this.transactionRunning())
+        {
+            newTransaction = {
+                'dictDuringTransaction': deepClone(this.transactions[this.transactions.length - 1].dictDuringTransaction)
+            };
+        }
+        else
+        {
+            newTransaction = {
+                'dictDuringTransaction': deepClone(this.dict)
+            };
+        }
+
         this.transactions.push(newTransaction);
     }
 
@@ -91,11 +103,12 @@ class KV_Store {
         // Daca avem mai multe de o tranzactie si dam COMMIT o mutam in tranzactia imediat exterioara
         if (this.transactions.length > 1)
         {
-            this.transactions[this.transactions.length - 2].dictDuringTransaction = this.transactions[this.transactions.length - 1].dictDuringTransaction;
+            this.transactions[this.transactions.length - 2].dictDuringTransaction = deepClone(this.transactions[this.transactions.length - 1].dictDuringTransaction);
         }
         else {
-            this.dict = this.transactions[this.transactions.length - 1].dictDuringTransaction;
+            this.dict = deepClone(this.transactions[this.transactions.length - 1].dictDuringTransaction);
         }
+
         this.transactions.pop();
     }
 
