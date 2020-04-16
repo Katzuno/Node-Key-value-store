@@ -5,6 +5,8 @@ class KV_Store {
     constructor(reader) {
         this.reader = reader;
         this.dict = {};
+        this.transactionRunning = false;
+        this.dictDuringTransaction = {};
     }
 
     getCommandType(commandArr) {
@@ -17,11 +19,47 @@ class KV_Store {
 
     validateReadOrDelete(args) {
         return args.length === 2;
-
     }
 
-    run() {
+    validateWrite(args) {
+        return args.length === 3;
+    }
 
+    store(key, value) {
+        if (this.transactionRunning) {
+            this.dictDuringTransaction[key] = value;
+        } else {
+            this.dict[key] = value;
+        }
+    }
+
+    read(key) {
+        if (this.transactionRunning) {
+            return this.dictDuringTransaction[key];
+        } else {
+            return this.dict[key];
+        }
+    }
+
+    delete(key) {
+        if (this.transactionRunning) {
+            delete this.dictDuringTransaction[key];
+        } else {
+            delete this.dict[key];
+        }
+    }
+
+    startTransaction() {
+        this.dictDuringTransaction = this.dict;
+    }
+
+    abortTransaction() {
+        this.dictDuringTransaction = {};
+    }
+
+    commitTransaction() {
+        this.dict = this.dictDuringTransaction;
+        this.dictDuringTransaction = {};
     }
 }
 
@@ -40,45 +78,53 @@ function main() {
     reader.prompt();
 
     reader.on('line', (command) => {
-        let args = kvStore.splitIntoArgs(command);
+            let args = kvStore.splitIntoArgs(command);
 
-        if (kvStore.getCommandType(args) === 'READ') {
-            try {
-                if (!kvStore.validateReadOrDelete(args)) {
-                    console.error('Invalid number of arguments. Syntax is [READ <key>]');
-                } else {
-                    reader.output.write(kvStore.dict[args[1]]);
+            if (command === 'START') {
+                reader.output.write('[INFO] Started transaction');
+                kvStore.startTransaction();
+            } else if (command === 'ABORT') {
+                reader.output.write('[INFO] Aborted transaction');
+                kvStore.abortTransaction();
+            } else if (command === 'COMMIT') {
+                reader.output.write('[INFO] COMMITED transaction');
+                kvStore.commitTransaction();
+            }
+
+            if (kvStore.getCommandType(args) === 'READ') {
+                try {
+                    if (!kvStore.validateReadOrDelete(args)) {
+                        console.error('Invalid number of arguments. Syntax is [READ <key>]');
+                    }
+                    reader.output.write(kvStore.read(args[1]));
+                } catch (err) {
+                    console.error('Key not found: ', args[1], err);
                 }
-            } catch (err) {
-                console.error('Key not found: ', args[1]);
-            }
-        } else if (kvStore.getCommandType(args) === 'WRITE') {
-            try {
-                kvStore.dict[args[1]] = args[2];
-            } catch (err) {
-                console.error('Unexpected number of arguments. Syntax is [WRITE <key> <value>].', err);
-            }
-        }
-        else if (kvStore.getCommandType(args) === 'DELETE') {
-            try {
-                if (!kvStore.validateReadOrDelete(args)) {
-                    console.error('Invalid number of arguments. Syntax is [DELETE <key>]');
-                } else {
-                    delete kvStore.dict[args[1]];
+            } else if (kvStore.getCommandType(args) === 'WRITE') {
+                if (!kvStore.validateWrite(args)) {
+                    console.error('Invalid number of arguments. Syntax is [WRITE <key> <value>].');
                 }
-            } catch (err) {
-                console.error('Key not found: ', args[1]);
+
+                kvStore.store(args[1], args[2]);
+            } else if (kvStore.getCommandType(args) === 'DELETE') {
+                try {
+                    if (!kvStore.validateReadOrDelete(args)) {
+                        console.error('Invalid number of arguments. Syntax is [DELETE <key>]');
+                    } else {
+                        delete kvStore.dict[args[1]];
+                    }
+                } catch (err) {
+                    console.error('Key not found: ', args[1]);
+                }
+            } else if (kvStore.getCommandType(args) === 'QUIT') {
+                reader.close();
             }
-        }
-        else if (kvStore.getCommandType(args) === 'QUIT') {
-            reader.close();
-        }
 
-        //console.log(kvStore.dict);
-        reader.output.write("\n");
-        reader.prompt();
+            reader.output.write("\n");
+            reader.prompt();
 
-    }).on('close', () => {
+        }
+    ).on('close', () => {
         console.log('Have a great day!');
         process.exit(0);
     });
