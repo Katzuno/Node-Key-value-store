@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "Erik Henning",
@@ -18,7 +18,12 @@
   "homepage": "https://github.com/Katzuno/Node-Key-value-store#readme",
   "description": "",
   "dependencies": {
+    "mock-stdin": "^1.0.0",
     "readline": "^1.3.0",
-    "readline-sync": "^1.4.10"
+    "readline-sync": "^1.4.10",
+    "supertest": "^4.0.2"
+  },
+  "devDependencies": {
+    "jest": "^25.3.0"
   }
 }
