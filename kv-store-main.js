@@ -5,15 +5,14 @@ class KV_Store {
     constructor(reader) {
         this.reader = reader;
         this.dict = {};
-        this.transactionRunning = false;
-        this.dictDuringTransaction = {};
+        this.transactions = [];
     }
 
     getCommandType(commandArr) {
         return commandArr[0];
     }
 
-    splitIntoArgs(command, separator) {
+    splitIntoArgs(command, separator = ' ') {
         return command.split(' ');
     }
 
@@ -25,41 +24,52 @@ class KV_Store {
         return args.length === 3;
     }
 
+    transactionRunning() {
+        if (this.transactions.length > 0) {
+            return true;
+        }
+        return false;
+    }
+
     store(key, value) {
-        if (this.transactionRunning) {
-            this.dictDuringTransaction[key] = value;
+        if (this.transactionRunning()) {
+            this.transactions[this.transactions.length - 1].dictDuringTransaction[key] = value;
         } else {
             this.dict[key] = value;
         }
     }
 
     read(key) {
-        if (this.transactionRunning) {
-            return this.dictDuringTransaction[key];
+        if (this.transactionRunning()) {
+            return this.transactions[this.transactions.length - 1].dictDuringTransaction[key];
         } else {
             return this.dict[key];
         }
     }
 
     delete(key) {
-        if (this.transactionRunning) {
-            delete this.dictDuringTransaction[key];
+        if (this.transactionRunning()) {
+            delete this.transactions[this.transactions.length - 1].dictDuringTransaction[key];
         } else {
             delete this.dict[key];
         }
     }
 
     startTransaction() {
-        this.dictDuringTransaction = this.dict;
+        let newTransaction = {
+            'running': true,
+            'dictDuringTransaction': this.dict
+        };
+        this.transactions.push(newTransaction);
     }
 
     abortTransaction() {
-        this.dictDuringTransaction = {};
+        this.transactions.pop();
     }
 
     commitTransaction() {
-        this.dict = this.dictDuringTransaction;
-        this.dictDuringTransaction = {};
+        this.dict = this.transactions[this.transactions.length - 1].dictDuringTransaction;
+        this.transactions.pop();
     }
 }
 
@@ -98,7 +108,7 @@ function main() {
                     }
                     reader.output.write(kvStore.read(args[1]));
                 } catch (err) {
-                    console.error('Key not found: ', args[1], err);
+                    console.error('Key not found: ', args[1]);
                 }
             } else if (kvStore.getCommandType(args) === 'WRITE') {
                 if (!kvStore.validateWrite(args)) {
@@ -111,7 +121,7 @@ function main() {
                     if (!kvStore.validateReadOrDelete(args)) {
                         console.error('Invalid number of arguments. Syntax is [DELETE <key>]');
                     } else {
-                        delete kvStore.dict[args[1]];
+                        kvStore.delete(args[1]);
                     }
                 } catch (err) {
                     console.error('Key not found: ', args[1]);
